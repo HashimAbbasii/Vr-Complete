@@ -3,15 +3,15 @@ using Photon.Pun;
 
 public class ARCharacterTracker : MonoBehaviourPun, IPunObservable
 {
-    public Transform vrTarget; // ✅ Make sure this is PUBLIC
-
+    public Transform vrTarget; // VR Character to follow
     public float smoothSpeed = 5f;
+
     private Vector3 networkPosition;
     private Quaternion networkRotation;
 
     void Update()
     {
-        if (!photonView.IsMine) // AR Player receives VR player updates
+        if (!photonView.IsMine) // AR Player receiving VR data
         {
             if (vrTarget != null)
             {
@@ -23,15 +23,26 @@ public class ARCharacterTracker : MonoBehaviourPun, IPunObservable
 
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {
-        if (stream.IsWriting) // VR sends position updates
+        if (stream.IsWriting) // VR Player sends position updates
         {
-            stream.SendNext(transform.position);
-            stream.SendNext(transform.rotation);
+            stream.SendNext(vrTarget.position);  // ✅ Ensure correct data type
+            stream.SendNext(vrTarget.rotation);
         }
-        else // AR receives position updates
+        else // AR Player receives VR data
         {
-            networkPosition = (Vector3)stream.ReceiveNext();
-            networkRotation = (Quaternion)stream.ReceiveNext();
+            object posObj = stream.ReceiveNext();
+            object rotObj = stream.ReceiveNext();
+
+            // ✅ Type Checking Before Casting
+            if (posObj is Vector3 && rotObj is Quaternion)
+            {
+                networkPosition = (Vector3)posObj;
+                networkRotation = (Quaternion)rotObj;
+            }
+            else
+            {
+                Debug.LogError("Received invalid data in OnPhotonSerializeView!");
+            }
         }
     }
 }
