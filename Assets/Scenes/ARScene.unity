@@ -1322,7 +1322,7 @@ MonoBehaviour:
   observableSearch: 2
   ObservedComponents:
   - {fileID: 1766566434}
-  sceneViewId: 1
+  sceneViewId: 6
   InstantiationId: 0
   isRuntimeInstantiated: 0
 --- !u!1 &2054120777
@@ -1400,6 +1400,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 42080f2590a32ba4d9fe37e3c39d4823, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  vrCharacterPrefabName: Y Bot
 --- !u!4 &2056810599
 Transform:
   m_ObjectHideFlags: 0

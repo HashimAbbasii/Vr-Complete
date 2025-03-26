@@ -7,7 +7,8 @@ public class VRNetworkCharacter : MonoBehaviourPun, IPunObservable
     {
         if (!photonView.IsMine) return;
 
-        // Example VR movement (Replace with actual VR tracking)
+        // Your actual VR movement code here
+        // For testing, you can use simple keyboard controls:
         float moveX = Input.GetAxis("Horizontal") * Time.deltaTime * 3f;
         float moveZ = Input.GetAxis("Vertical") * Time.deltaTime * 3f;
         transform.position += new Vector3(moveX, 0, moveZ);
@@ -15,10 +16,11 @@ public class VRNetworkCharacter : MonoBehaviourPun, IPunObservable
 
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {
-        if (stream.IsWriting) // VR Player sending data
+        if (stream.IsWriting && photonView.IsMine)
         {
             stream.SendNext(transform.position);
             stream.SendNext(transform.rotation);
+            Debug.Log("VR sending position: " + transform.position);
         }
     }
 }
