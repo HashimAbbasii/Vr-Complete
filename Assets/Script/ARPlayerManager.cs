@@ -3,19 +3,30 @@ using Photon.Pun;
 
 public class ARPlayerManager : MonoBehaviourPunCallbacks
 {
-    public string vrCharacterPrefabName = "Y Bot";
+    public ARCharacterTracker arTracker; // Assign in Inspector
+    public string vrCharacterTag = "VRCharacter"; // Tag for VR character
 
     public override void OnJoinedRoom()
     {
-        // Only non-master (AR) client spawns VR character
+        // Ensure this only runs on the AR client
         if (!PhotonNetwork.IsMasterClient)
         {
-            GameObject vrCharacter = PhotonNetwork.Instantiate(
-                vrCharacterPrefabName,
-                Vector3.zero,
-                Quaternion.identity
-            );
-            Debug.Log($"AR Spawned VR Character. ViewID: {vrCharacter.GetComponent<PhotonView>().ViewID}");
+            // Find the VR character in the scene
+            GameObject vrCharacter = GameObject.FindGameObjectWithTag(vrCharacterTag);
+
+            if (vrCharacter != null)
+            {
+                // Set the tracker to follow the VR character
+                if (arTracker != null)
+                {
+                    arTracker.SetVRCharacterTransform(vrCharacter.transform);
+                    Debug.Log("AR Tracker initialized to follow VR character");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("No VR character found with the specified tag!");
+            }
         }
     }
 }
