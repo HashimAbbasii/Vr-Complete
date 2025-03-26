@@ -3,26 +3,38 @@ using Photon.Pun;
 
 public class ARPlayerManager : MonoBehaviourPunCallbacks
 {
-    public string vrCharacterPrefabName = "Y Bot"; // Ensure this matches the exact prefab name
+    private ARCharacterTracker arTracker;
+
+    void Start()
+    {
+        arTracker = FindObjectOfType<ARCharacterTracker>();
+    }
 
     public override void OnJoinedRoom()
     {
         Debug.Log("AR Player Joined Room!");
 
-        if (PhotonNetwork.IsMasterClient)
+        GameObject vrPlayer = FindVRPlayer();
+        if (vrPlayer != null)
         {
-            Debug.Log("Master Client (VR) detected, AR will not instantiate.");
-            return;
-        }
-
-        if (!string.IsNullOrEmpty(vrCharacterPrefabName))
-        {
-            GameObject vrCharacter = PhotonNetwork.Instantiate(vrCharacterPrefabName, Vector3.zero, Quaternion.identity);
-            Debug.Log("Spawned VR Character in AR Scene: " + vrCharacter.name);
+            arTracker.vrTarget = vrPlayer.transform;
+            Debug.Log("Tracking VR Player in AR Scene: " + vrPlayer.name);
         }
         else
         {
-            Debug.LogError("VR Character Prefab Name is missing!");
+            Debug.LogError("No VR Player Found!");
         }
+    }
+
+    private GameObject FindVRPlayer()
+    {
+        foreach (var player in PhotonNetwork.PlayerListOthers)
+        {
+            if (player.IsMasterClient) // VR Player is always the Master Client
+            {
+                return PhotonView.Find(player.ActorNumber)?.gameObject;
+            }
+        }
+        return null;
     }
 }
