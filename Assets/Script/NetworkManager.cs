@@ -2,20 +2,18 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 
-public class ARSceneSetup : MonoBehaviourPunCallbacks
+public class NetworkManager : MonoBehaviourPunCallbacks
 {
     [Header("Network Settings")]
     public string roomName = "VRAR_Room";
     public byte maxPlayers = 2;
+    public bool isVRScene = false; // Manually set in inspector
 
     private bool isConnecting = false;
 
     void Start()
     {
-        // Ensure scene sync is enabled
         PhotonNetwork.AutomaticallySyncScene = true;
-
-        // Connect to Photon
         ConnectToPhoton();
     }
 
@@ -24,32 +22,27 @@ public class ARSceneSetup : MonoBehaviourPunCallbacks
         if (isConnecting) return;
 
         isConnecting = true;
-        Debug.Log("AR Scene: Attempting to connect to Photon...");
+        Debug.Log($"{(isVRScene ? "VR" : "AR")} Scene: Attempting to connect to Photon...");
 
-        // Reset Photon state if needed
         if (PhotonNetwork.IsMessageQueueRunning)
         {
             PhotonNetwork.Disconnect();
         }
 
-        // Explicitly connect
         PhotonNetwork.ConnectUsingSettings();
     }
 
     public override void OnConnectedToMaster()
     {
-        Debug.Log("AR Scene: Connected to Master Server");
+        Debug.Log($"{(isVRScene ? "VR" : "AR")} Scene: Connected to Master Server");
         isConnecting = false;
-
-        // Attempt to join or create room
         TryJoinRoom();
     }
 
     void TryJoinRoom()
     {
-        Debug.Log("AR Scene: Attempting to join room...");
+        Debug.Log($"{(isVRScene ? "VR" : "AR")} Scene: Attempting to join room...");
 
-        // Ensure we're in the correct network state
         if (PhotonNetwork.IsConnectedAndReady)
         {
             RoomOptions roomOptions = new RoomOptions
@@ -60,48 +53,76 @@ public class ARSceneSetup : MonoBehaviourPunCallbacks
                 EmptyRoomTtl = 0
             };
 
-            // Try to join or create room
-            PhotonNetwork.JoinOrCreateRoom(
-                roomName,
-                roomOptions,
-                TypedLobby.Default
-            );
+            // VR scene tries to create room, AR scene tries to join
+            if (isVRScene)
+            {
+                PhotonNetwork.CreateRoom(
+                    roomName,
+                    roomOptions,
+                    TypedLobby.Default
+                );
+            }
+            else
+            {
+                PhotonNetwork.JoinRoom(roomName);
+            }
         }
         else
         {
-            Debug.LogWarning("AR Scene: Not ready to join room. Reconnecting...");
+            Debug.LogWarning($"{(isVRScene ? "VR" : "AR")} Scene: Not ready to join room. Reconnecting...");
             Invoke(nameof(ConnectToPhoton), 2f);
         }
     }
 
     public override void OnJoinedRoom()
     {
-        Debug.Log($"AR Scene: Joined Room {PhotonNetwork.CurrentRoom.Name}");
+        Debug.Log($"{(isVRScene ? "VR" : "AR")} Scene: Joined Room {PhotonNetwork.CurrentRoom.Name}");
         Debug.Log($"Players in Room: {PhotonNetwork.CurrentRoom.PlayerCount}");
+
+        // Specific actions based on scene type
+        if (isVRScene)
+        {
+            HandleVRSceneJoined();
+        }
+        else
+        {
+            HandleARSceneJoined();
+        }
+    }
+
+    void HandleVRSceneJoined()
+    {
+        // VR-specific room joining logic
+        Debug.Log("VR Scene: Waiting for AR client to join...");
+    }
+
+    void HandleARSceneJoined()
+    {
+        // AR-specific room joining logic
+        Debug.Log("AR Scene: Connected to VR session");
     }
 
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
-        Debug.LogError($"AR Scene: Join Room Failed - {message} (Code: {returnCode})");
+        Debug.LogError($"{(isVRScene ? "VR" : "AR")} Scene: Join Room Failed - {message} (Code: {returnCode})");
 
-        // Retry joining
-        Invoke(nameof(TryJoinRoom), 2f);
+        if (!isVRScene)
+        {
+            // If AR scene fails to join, wait and retry
+            Invoke(nameof(TryJoinRoom), 2f);
+        }
     }
 
     public override void OnCreateRoomFailed(short returnCode, string message)
     {
-        Debug.LogError($"AR Scene: Create Room Failed - {message} (Code: {returnCode})");
-
-        // Retry connecting
+        Debug.LogError($"VR Scene: Create Room Failed - {message} (Code: {returnCode})");
         Invoke(nameof(ConnectToPhoton), 2f);
     }
 
     public override void OnDisconnected(DisconnectCause cause)
     {
-        Debug.LogWarning($"AR Scene: Disconnected - {cause}");
+        Debug.LogWarning($"{(isVRScene ? "VR" : "AR")} Scene: Disconnected - {cause}");
         isConnecting = false;
-
-        // Automatically reconnect
         Invoke(nameof(ConnectToPhoton), 2f);
     }
 }
