@@ -4,13 +4,11 @@ using Photon.Realtime;
 
 public class NetworkManager : MonoBehaviourPunCallbacks
 {
-    [Tooltip("Auto-join room on startup?")]
     public bool autoJoinRoom = true;
 
     void Start()
     {
         Debug.Log("Connecting to Photon...");
-        PhotonNetwork.AutomaticallySyncScene = true;  // Ensure all clients load the same scene
         PhotonNetwork.ConnectUsingSettings();
     }
 
@@ -33,12 +31,6 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public override void OnJoinedRoom()
     {
         Debug.Log($"Joined Room: {PhotonNetwork.CurrentRoom.Name} | Players: {PhotonNetwork.CurrentRoom.PlayerCount}");
-
-        // Debugging - Check who is in the room
-        foreach (var player in PhotonNetwork.PlayerList)
-        {
-            Debug.Log($"Player in Room: {player.ActorNumber} - IsMasterClient: {player.IsMasterClient}");
-        }
     }
 
     public override void OnJoinRoomFailed(short returnCode, string message)
