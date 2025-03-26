@@ -17,6 +17,7 @@ public class ARNetworkCharacter : MonoBehaviourPun, IPunObservable
     {
         if (!photonView.IsMine) // AR Player receiving movement
         {
+            Debug.Log($"{gameObject.name} | ViewID: {photonView.ViewID} | IsMine: {photonView.IsMine} | Owner: {photonView.Owner}");
             transform.position = Vector3.Lerp(transform.position, networkPosition, Time.deltaTime * smoothSpeed);
             transform.rotation = Quaternion.Slerp(transform.rotation, networkRotation, Time.deltaTime * smoothSpeed);
         }

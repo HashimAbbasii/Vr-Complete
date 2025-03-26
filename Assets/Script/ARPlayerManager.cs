@@ -8,26 +8,17 @@ public class ARPlayerManager : MonoBehaviourPunCallbacks
 
     public override void OnJoinedRoom()
     {
-        Debug.Log("AR Player Joined Room!");
+        if (PhotonNetwork.IsMasterClient)
+        {
+            Debug.Log("VR client - no need to spawn VR character in AR");
+            return;
+        }
 
-        if (PhotonNetwork.IsMasterClient) return; // VR player is master, skip
-
-        // Spawn the VR character in AR scene
         GameObject vrCharacter = PhotonNetwork.Instantiate(
-            vrCharacterPrefabName,
+            "Y Bot",
             Vector3.zero,
             Quaternion.identity
         );
-
-        // Assign the VR character's transform to the tracker
-        if (arTracker != null)
-        {
-            arTracker.vrTarget = vrCharacter.transform;
-            Debug.Log("Assigned VR Character to AR Tracker!");
-        }
-        else
-        {
-            Debug.LogError("ARCharacterTracker reference missing!");
-        }
+        Debug.Log($"AR Spawned VR Character. ViewID: {vrCharacter.GetComponent<PhotonView>().ViewID}");
     }
 }

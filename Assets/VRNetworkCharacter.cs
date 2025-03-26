@@ -12,15 +12,16 @@ public class VRNetworkCharacter : MonoBehaviourPun, IPunObservable
     void Update()
     {
         // Only execute for the local VR player
-        if (!photonView.IsMine) return;
-
-        // Debug current position and ownership status
-        Debug.Log($"VR Position: {transform.position} | IsMine: {photonView.IsMine}");
-
-        // Your VR movement logic here (replace with actual VR input)
-        float moveX = Input.GetAxis("Horizontal") * Time.deltaTime * 3f;
-        float moveZ = Input.GetAxis("Vertical") * Time.deltaTime * 3f;
-        transform.position += new Vector3(moveX, 0, moveZ);
+        if (photonView.IsMine)
+        {
+            // Send updates manually if automatic sync fails
+            photonView.RPC(
+                "SyncTransform",
+                RpcTarget.Others,
+                transform.position,
+                transform.rotation
+            );
+        }
     }
 
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
@@ -32,4 +33,24 @@ public class VRNetworkCharacter : MonoBehaviourPun, IPunObservable
             Debug.Log($"VR → Sending Position: {transform.position}");
         }
     }
+    [PunRPC]
+    void SyncTransform(Vector3 position, Quaternion rotation)
+    {
+        transform.position = position;
+        transform.rotation = rotation;
+    }
+
+    //void Update()
+    //{
+    //    if (photonView.IsMine)
+    //    {
+    //        // Send updates manually if automatic sync fails
+    //        photonView.RPC(
+    //            "SyncTransform",
+    //            RpcTarget.Others,
+    //            transform.position,
+    //            transform.rotation
+    //        );
+    //    }
+    //}
 }
