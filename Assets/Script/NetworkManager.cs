@@ -2,21 +2,20 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 
-public class NetworkManager : MonoBehaviourPunCallbacks
+public class ARSceneSetup : MonoBehaviourPunCallbacks
 {
-    [Header("Settings")]
-    [Tooltip("Automatically join room on connection")]
-    public bool autoJoinRoom = true;
-    [Tooltip("Room name for VR/AR sync")]
+    [Header("Network Settings")]
     public string roomName = "VRAR_Room";
-    [Tooltip("Max VR+AR players allowed")]
     public byte maxPlayers = 2;
 
     private bool isConnecting = false;
 
     void Start()
     {
+        // Ensure scene sync is enabled
         PhotonNetwork.AutomaticallySyncScene = true;
+
+        // Connect to Photon
         ConnectToPhoton();
     }
 
@@ -25,82 +24,84 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         if (isConnecting) return;
 
         isConnecting = true;
-        Debug.Log("Connecting to Photon...");
+        Debug.Log("AR Scene: Attempting to connect to Photon...");
 
-        // Ensure you're not already connected
-        if (!PhotonNetwork.IsConnected)
+        // Reset Photon state if needed
+        if (PhotonNetwork.IsMessageQueueRunning)
         {
-            PhotonNetwork.ConnectUsingSettings();
+            PhotonNetwork.Disconnect();
         }
-        else
-        {
-            OnConnectedToMaster();
-        }
+
+        // Explicitly connect
+        PhotonNetwork.ConnectUsingSettings();
     }
 
     public override void OnConnectedToMaster()
     {
+        Debug.Log("AR Scene: Connected to Master Server");
         isConnecting = false;
-        Debug.Log("Connected to Photon Master Server");
 
-        if (autoJoinRoom)
-        {
-            // Use JoinRandomRoom with fallback
-            PhotonNetwork.JoinRandomRoom();
-        }
+        // Attempt to join or create room
+        TryJoinRoom();
     }
 
-    public override void OnJoinRandomFailed(short returnCode, string message)
+    void TryJoinRoom()
     {
-        Debug.Log($"Join Random Failed: {message}. Creating new room...");
+        Debug.Log("AR Scene: Attempting to join room...");
 
-        // Create room with specific options
-        PhotonNetwork.CreateRoom(roomName, new RoomOptions
+        // Ensure we're in the correct network state
+        if (PhotonNetwork.IsConnectedAndReady)
         {
-            MaxPlayers = maxPlayers,
-            IsVisible = true,
-            PublishUserId = true,
-            EmptyRoomTtl = 0
-        });
+            RoomOptions roomOptions = new RoomOptions
+            {
+                MaxPlayers = maxPlayers,
+                IsVisible = true,
+                PublishUserId = true,
+                EmptyRoomTtl = 0
+            };
+
+            // Try to join or create room
+            PhotonNetwork.JoinOrCreateRoom(
+                roomName,
+                roomOptions,
+                TypedLobby.Default
+            );
+        }
+        else
+        {
+            Debug.LogWarning("AR Scene: Not ready to join room. Reconnecting...");
+            Invoke(nameof(ConnectToPhoton), 2f);
+        }
     }
 
     public override void OnJoinedRoom()
     {
-        Debug.Log($"Joined Room: {PhotonNetwork.CurrentRoom.Name} | " +
-                 $"Players: {PhotonNetwork.CurrentRoom.PlayerCount}/" +
-                 $"{PhotonNetwork.CurrentRoom.MaxPlayers}");
-
-        // Determine client role more explicitly
-        DetermineClientRole();
-    }
-
-    void DetermineClientRole()
-    {
-        if (PhotonNetwork.CurrentRoom.PlayerCount == 1)
-        {
-            // First player is always VR
-            Debug.Log("This is the VR Client (First Player)");
-        }
-        else if (PhotonNetwork.CurrentRoom.PlayerCount == 2)
-        {
-            // Second player is AR
-            Debug.Log("This is the AR Client (Second Player)");
-        }
+        Debug.Log($"AR Scene: Joined Room {PhotonNetwork.CurrentRoom.Name}");
+        Debug.Log($"Players in Room: {PhotonNetwork.CurrentRoom.PlayerCount}");
     }
 
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
-        Debug.LogError($"Join Room Failed: {message}");
-        isConnecting = false;
+        Debug.LogError($"AR Scene: Join Room Failed - {message} (Code: {returnCode})");
 
-        // Optional: Retry connection
-        Invoke(nameof(ConnectToPhoton), 3f);
+        // Retry joining
+        Invoke(nameof(TryJoinRoom), 2f);
+    }
+
+    public override void OnCreateRoomFailed(short returnCode, string message)
+    {
+        Debug.LogError($"AR Scene: Create Room Failed - {message} (Code: {returnCode})");
+
+        // Retry connecting
+        Invoke(nameof(ConnectToPhoton), 2f);
     }
 
     public override void OnDisconnected(DisconnectCause cause)
     {
+        Debug.LogWarning($"AR Scene: Disconnected - {cause}");
         isConnecting = false;
-        Debug.LogWarning($"Disconnected: {cause}. Reconnecting...");
-        ConnectToPhoton();
+
+        // Automatically reconnect
+        Invoke(nameof(ConnectToPhoton), 2f);
     }
 }
