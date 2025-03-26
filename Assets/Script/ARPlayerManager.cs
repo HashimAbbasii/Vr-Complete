@@ -1,40 +1,36 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Photon.Pun;
 
 public class ARPlayerManager : MonoBehaviourPunCallbacks
 {
-    private ARCharacterTracker arTracker;
-
-    void Start()
-    {
-        arTracker = FindObjectOfType<ARCharacterTracker>();
-    }
+    public string vrCharacterPrefabName = "Y Bot"; // Ensure this matches the exact name in Resources
 
     public override void OnJoinedRoom()
     {
         Debug.Log("AR Player Joined Room!");
 
-        GameObject vrPlayer = FindVRPlayer();
-        if (vrPlayer != null)
+        if (PhotonNetwork.IsMasterClient) return; // VR Player is master, AR shouldn't instantiate
+
+        if (!string.IsNullOrEmpty(vrCharacterPrefabName))
         {
-            arTracker.vrTarget = vrPlayer.transform;
-            Debug.Log("Tracking VR Player in AR Scene: " + vrPlayer.name);
+            GameObject vrCharacter = PhotonNetwork.Instantiate(vrCharacterPrefabName, Vector3.zero, Quaternion.identity);
+            Debug.Log("Spawned VR Character in AR Scene: " + vrCharacter.name);
+
+            // Find ARCharacterTracker in the scene
+            ARCharacterTracker arTracker = FindObjectOfType<ARCharacterTracker>();
+            if (arTracker != null)
+            {
+                arTracker.vrTarget = vrCharacter.transform; // ✅ Assign VR Character as the Target
+                Debug.Log("Assigned VR Character to AR Tracker!");
+            }
+            else
+            {
+                Debug.LogError("ARCharacterTracker not found in the scene!");
+            }
         }
         else
         {
-            Debug.LogError("No VR Player Found!");
+            Debug.LogError("VR Character Prefab Name is missing!");
         }
-    }
-
-    private GameObject FindVRPlayer()
-    {
-        foreach (var player in PhotonNetwork.PlayerListOthers)
-        {
-            if (player.IsMasterClient) // VR Player is always the Master Client
-            {
-                return PhotonView.Find(player.ActorNumber)?.gameObject;
-            }
-        }
-        return null;
     }
 }

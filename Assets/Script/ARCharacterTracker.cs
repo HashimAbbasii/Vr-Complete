@@ -1,17 +1,17 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Photon.Pun;
 
 public class ARCharacterTracker : MonoBehaviourPun, IPunObservable
 {
-    public Transform vrTarget; // Reference to the VR player's object in Photon
-    public float smoothSpeed = 5f;
+    public Transform vrTarget; // ✅ Make sure this is PUBLIC
 
+    public float smoothSpeed = 5f;
     private Vector3 networkPosition;
     private Quaternion networkRotation;
 
     void Update()
     {
-        if (!photonView.IsMine) // AR Player receiving VR player updates
+        if (!photonView.IsMine) // AR Player receives VR player updates
         {
             if (vrTarget != null)
             {
@@ -23,7 +23,12 @@ public class ARCharacterTracker : MonoBehaviourPun, IPunObservable
 
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {
-        if (stream.IsReading) // Receiving VR player's data
+        if (stream.IsWriting) // VR sends position updates
+        {
+            stream.SendNext(transform.position);
+            stream.SendNext(transform.rotation);
+        }
+        else // AR receives position updates
         {
             networkPosition = (Vector3)stream.ReceiveNext();
             networkRotation = (Quaternion)stream.ReceiveNext();
