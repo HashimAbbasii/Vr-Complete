@@ -3,41 +3,58 @@ using Photon.Pun;
 
 public class ARCharacterTracker : MonoBehaviourPun, IPunObservable
 {
-    public Transform vrTarget; // Assign this in ARPlayerManager
-    public float smoothSpeed = 10f; // Increased for better responsiveness
+    [Header("Settings")]
+    [Tooltip("The VR character's transform to follow")]
+    public Transform vrTarget; // Assigned by ARPlayerManager
 
+    [Tooltip("Smoothing speed for movement")]
+    [Range(5f, 30f)] public float smoothSpeed = 15f;
+
+    // Networked values
     private Vector3 networkPosition;
     private Quaternion networkRotation;
-    private void Start()
-    {
-        if (vrTarget != null)
-        {
-            PhotonView vrPhotonView = vrTarget.GetComponent<PhotonView>();
-            Debug.Log($"AR Tracking VR Character ViewID: {vrPhotonView?.ViewID}");
-        }
-    }
+    private float lastNetworkTime;
 
     void Update()
     {
+        // Only interpolate if we're not the owner (AR client)
         if (!photonView.IsMine && vrTarget != null)
         {
-            transform.position = Vector3.Lerp(transform.position, networkPosition, Time.deltaTime * smoothSpeed);
-            transform.rotation = Quaternion.Slerp(transform.rotation, networkRotation, Time.deltaTime * smoothSpeed);
+            float timeSinceUpdate = Time.time - lastNetworkTime;
+            float lerpFactor = Mathf.Clamp01(timeSinceUpdate * smoothSpeed);
+
+            transform.position = Vector3.Lerp(transform.position, networkPosition, lerpFactor);
+            transform.rotation = Quaternion.Slerp(transform.rotation, networkRotation, lerpFactor);
         }
     }
 
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {
-        if (stream.IsWriting && photonView.IsMine && vrTarget != null)
+        if (stream.IsWriting)
         {
-            stream.SendNext(vrTarget.position);
-            stream.SendNext(vrTarget.rotation);
+            // VR player writes position data
+            if (vrTarget != null)
+            {
+                stream.SendNext(vrTarget.position);
+                stream.SendNext(vrTarget.rotation);
+                Debug.Log($"VR→AR Sync | Pos: {vrTarget.position}");
+            }
         }
         else
         {
+            // AR player reads position data
             networkPosition = (Vector3)stream.ReceiveNext();
             networkRotation = (Quaternion)stream.ReceiveNext();
-            Debug.Log("AR received position: " + networkPosition);
+            lastNetworkTime = Time.time;
+
+            Debug.Log($"AR←VR Update | Pos: {networkPosition}");
         }
+    }
+
+    void OnValidate()
+    {
+        // Auto-find tracker if not assigned
+        if (vrTarget == null)
+            vrTarget = transform;
     }
 }

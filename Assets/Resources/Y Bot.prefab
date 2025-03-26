@@ -1445,7 +1445,7 @@ GameObject:
   - component: {fileID: 3170133165611001915}
   m_Layer: 0
   m_Name: Y Bot
-  m_TagString: Untagged
+  m_TagString: VRPlayer
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

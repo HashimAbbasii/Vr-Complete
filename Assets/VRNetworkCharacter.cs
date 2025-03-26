@@ -4,23 +4,40 @@ using Photon.Pun;
 public class VRNetworkCharacter : MonoBehaviourPun, IPunObservable
 {
     private Vector3 lastSentPosition;
-    private void Start()
+    private float lastSendTime;
+    public float sendInterval = 0.1f; // How often to sync (seconds)
+
+    void Start()
     {
-        Debug.Log($"VR Character ViewID: {photonView.ViewID} | IsMine: {photonView.IsMine}");
+        // Ownership validation
+        if (!photonView.IsMine)
+        {
+            if (PhotonNetwork.IsConnected)
+                PhotonNetwork.Destroy(gameObject);
+            return;
+        }
+        Debug.Log($"VR Character - Correct Owner | ViewID: {photonView.ViewID}");
     }
 
     void Update()
     {
-        // Only execute for the local VR player
-        if (photonView.IsMine)
+        if (!photonView.IsMine) return;
+
+        // Debug ownership
+        Debug.Log($"VR owns: {gameObject.name} | ViewID: {photonView.ViewID}");
+
+        // Your VR movement input handling here
+        // float moveX = Input.GetAxis("Horizontal") * Time.deltaTime * 3f;
+        // float moveZ = Input.GetAxis("Vertical") * Time.deltaTime * 3f;
+        // transform.position += new Vector3(moveX, 0, moveZ);
+
+        // Manual sync with rate limiting
+        if (Time.time - lastSendTime > sendInterval ||
+            Vector3.Distance(transform.position, lastSentPosition) > 0.1f)
         {
-            // Send updates manually if automatic sync fails
-            photonView.RPC(
-                "SyncTransform",
-                RpcTarget.Others,
-                transform.position,
-                transform.rotation
-            );
+            photonView.RPC("ForceSync", RpcTarget.Others, transform.position, transform.rotation);
+            lastSentPosition = transform.position;
+            lastSendTime = Time.time;
         }
     }
 
@@ -33,24 +50,15 @@ public class VRNetworkCharacter : MonoBehaviourPun, IPunObservable
             Debug.Log($"VR → Sending Position: {transform.position}");
         }
     }
-    [PunRPC]
-    void SyncTransform(Vector3 position, Quaternion rotation)
-    {
-        transform.position = position;
-        transform.rotation = rotation;
-    }
 
-    //void Update()
-    //{
-    //    if (photonView.IsMine)
-    //    {
-    //        // Send updates manually if automatic sync fails
-    //        photonView.RPC(
-    //            "SyncTransform",
-    //            RpcTarget.Others,
-    //            transform.position,
-    //            transform.rotation
-    //        );
-    //    }
-    //}
+    [PunRPC]
+    void ForceSync(Vector3 pos, Quaternion rot)
+    {
+        // Only non-owners should execute this
+        if (!photonView.IsMine)
+        {
+            transform.position = pos;
+            transform.rotation = rot;
+        }
+    }
 }

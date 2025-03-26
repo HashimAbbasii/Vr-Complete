@@ -1,41 +1,43 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Photon.Pun;
-using static UnityEngine.GraphicsBuffer;
 
 public class ARNetworkCharacter : MonoBehaviourPun, IPunObservable
 {
-    public float smoothSpeed = 5f;
+    [Tooltip("Smoothing speed for position/rotation updates")]
+    public float smoothSpeed = 10f; // Increased for better responsiveness
 
     private Vector3 networkPosition;
     private Quaternion networkRotation;
-    private void Start()
-    {
-        
-    }
 
     void Update()
     {
-        if (!photonView.IsMine) // AR Player receiving movement
+        // Debug ownership issues
+        if (photonView.IsMine)
         {
-            Debug.Log($"{gameObject.name} | ViewID: {photonView.ViewID} | IsMine: {photonView.IsMine} | Owner: {photonView.Owner}");
-            transform.position = Vector3.Lerp(transform.position, networkPosition, Time.deltaTime * smoothSpeed);
-            transform.rotation = Quaternion.Slerp(transform.rotation, networkRotation, Time.deltaTime * smoothSpeed);
+            Debug.LogError($"FATAL: AR client incorrectly owns VR character! ViewID: {photonView.ViewID}");
+            return;
         }
+
+        // Smoothly interpolate to received network values
+        transform.position = Vector3.Lerp(transform.position, networkPosition, Time.deltaTime * smoothSpeed);
+        transform.rotation = Quaternion.Slerp(transform.rotation, networkRotation, Time.deltaTime * smoothSpeed);
     }
 
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {
-        if (stream.IsWriting && photonView.IsMine) // VR Player sending data
+        if (stream.IsWriting)
         {
+            // VR player writes data
             stream.SendNext(transform.position);
             stream.SendNext(transform.rotation);
-            Debug.Log("VR: Sending position");
+            Debug.Log($"VR→AR Sync | Pos: {transform.position}");
         }
-        else // AR Player receiving data
+        else
         {
+            // AR player reads data
             networkPosition = (Vector3)stream.ReceiveNext();
             networkRotation = (Quaternion)stream.ReceiveNext();
-            Debug.Log($"AR: Received pos: {networkPosition}");
+            Debug.Log($"AR←VR Update | Pos: {networkPosition}");
         }
     }
 }
