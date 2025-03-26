@@ -10,10 +10,10 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     void Start()
     {
         Debug.Log("Connecting to Photon...");
+        PhotonNetwork.AutomaticallySyncScene = true;  // Ensure all clients load the same scene
         PhotonNetwork.ConnectUsingSettings();
     }
 
-    // Called when connected to Photon Master Server
     public override void OnConnectedToMaster()
     {
         Debug.Log("Connected to Photon Master Server!");
@@ -30,20 +30,22 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         }
     }
 
-    // Called when successfully joined a room
     public override void OnJoinedRoom()
     {
-        Debug.Log($"Joined Room: {PhotonNetwork.CurrentRoom.Name} | " +
-                $"Players: {PhotonNetwork.CurrentRoom.PlayerCount}");
+        Debug.Log($"Joined Room: {PhotonNetwork.CurrentRoom.Name} | Players: {PhotonNetwork.CurrentRoom.PlayerCount}");
+
+        // Debugging - Check who is in the room
+        foreach (var player in PhotonNetwork.PlayerList)
+        {
+            Debug.Log($"Player in Room: {player.ActorNumber} - IsMasterClient: {player.IsMasterClient}");
+        }
     }
 
-    // Called if joining a room fails
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
         Debug.LogError($"Failed to join room: {message} (Error: {returnCode})");
     }
 
-    // Called when disconnected
     public override void OnDisconnected(DisconnectCause cause)
     {
         Debug.LogWarning($"Disconnected: {cause}. Reconnecting...");

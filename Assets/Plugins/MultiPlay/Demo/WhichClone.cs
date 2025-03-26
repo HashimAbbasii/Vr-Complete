@@ -12,10 +12,10 @@ namespace MultiPlay.Demo
             return;
 #endif
 
-            int cloneIndex = MultiPlay.Utils.GetCurrentCloneIndex();
+            //int cloneIndex = MultiPlay.Utils.GetCurrentCloneIndex();
 
-            if (cloneIndex == 0) Debug.Log("MultiPlay is running on: Main Project/Server");
-            else Debug.Log($"MultiPlay is running on Client: {cloneIndex}");
+            //if (cloneIndex == 0) Debug.Log("MultiPlay is running on: Main Project/Server");
+            //else Debug.Log($"MultiPlay is running on Client: {cloneIndex}");
         }
     }
 }
