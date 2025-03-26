@@ -27,7 +27,7 @@ public class ARSceneSetup : MonoBehaviourPunCallbacks
         Debug.Log("AR Scene Joined Room");
 
         // Find VR character in scene
-        GameObject vrCharacter = GameObject.FindGameObjectWithTag("VRCharacter");
+        GameObject vrCharacter = GameObject.FindGameObjectWithTag("VRPlayer");
 
         if (vrCharacter != null)
         {
