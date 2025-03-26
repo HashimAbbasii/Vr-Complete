@@ -4,7 +4,7 @@ using Photon.Pun;
 public class ARPlayerManager : MonoBehaviourPunCallbacks
 {
     public ARCharacterTracker arTracker; // Assign in Inspector
-    public string vrCharacterTag = "VRCharacter"; // Tag for VR character
+    public string vrCharacterTag = "VRPlayer"; // Tag for VR character
 
     public override void OnJoinedRoom()
     {
