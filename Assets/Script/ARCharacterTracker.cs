@@ -41,7 +41,7 @@ public class ARCharacterTracker : MonoBehaviourPun, IPunObservable
             }
             else
             {
-                Debug.LogError("Received invalid data in OnPhotonSerializeView!");
+               // Debug.LogError("Received invalid data in OnPhotonSerializeView!");
             }
         }
     }
