@@ -8,6 +8,14 @@ public class ARCharacterTracker : MonoBehaviourPun, IPunObservable
 
     private Vector3 networkPosition;
     private Quaternion networkRotation;
+    private void Start()
+    {
+        if (vrTarget != null)
+        {
+            PhotonView vrPhotonView = vrTarget.GetComponent<PhotonView>();
+            Debug.Log($"AR Tracking VR Character ViewID: {vrPhotonView?.ViewID}");
+        }
+    }
 
     void Update()
     {

@@ -43,4 +43,8 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         Debug.LogWarning($"Disconnected: {cause}. Reconnecting...");
         PhotonNetwork.Reconnect();
     }
+    public override void OnPlayerEnteredRoom(Player newPlayer)
+    {
+        Debug.Log($"Player joined: {newPlayer.ActorNumber} | Total: {PhotonNetwork.CurrentRoom.PlayerCount}");
+    }
 }

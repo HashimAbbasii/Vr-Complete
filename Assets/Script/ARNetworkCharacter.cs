@@ -1,5 +1,6 @@
 using UnityEngine;
 using Photon.Pun;
+using static UnityEngine.GraphicsBuffer;
 
 public class ARNetworkCharacter : MonoBehaviourPun, IPunObservable
 {
@@ -7,6 +8,10 @@ public class ARNetworkCharacter : MonoBehaviourPun, IPunObservable
 
     private Vector3 networkPosition;
     private Quaternion networkRotation;
+    private void Start()
+    {
+        
+    }
 
     void Update()
     {

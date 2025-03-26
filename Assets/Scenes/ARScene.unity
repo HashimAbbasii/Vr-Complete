@@ -1401,6 +1401,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   vrCharacterPrefabName: Y Bot
+  arTracker: {fileID: 1766566434}
 --- !u!4 &2056810599
 Transform:
   m_ObjectHideFlags: 0
